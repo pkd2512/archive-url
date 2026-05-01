@@ -635,46 +635,7 @@ export default async function handler(
 
 ---
 
-## Testing
-
-```bash
-# Run tests
-npm test
-
-# Run tests in watch mode
-npm test -- --watch
-```
-
----
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Build library
-npm run build
-
-# Run tests
-npm test
-
-# Test CLI
-npm run archive https://example.com
-npm run demo  # Quick test with sample data
-```
-
----
-
 ## Troubleshooting
-
-### Issue: Module not found
-
-Make sure the library is built:
-
-```bash
-npm run build
-```
 
 ### Issue: Rate limiting errors
 
@@ -746,21 +707,6 @@ async function preserveArticles(articles) {
     archiveUrl: results[i].archiveUrl
   }));
 }
-```
-
----
-
-## Publishing to npm
-
-```bash
-# Update version
-npm version patch  # or minor, or major
-
-# Login to npm
-npm login
-
-# Publish
-npm publish
 ```
 
 ---
