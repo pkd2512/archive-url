@@ -28,14 +28,11 @@ npm install
 # Build the library
 npm run build
 
-# Test with a single URL from your data.csv
-npm run demo
+# Archive a single URL
+npm run archive https://example.com
 
-# Process your entire CSV file
-npm run csv data.csv
-
-# Or use the alias
-npm run process data.csv
+# Process a CSV file (creates filename_archived.csv)
+npm run archive data.csv
 ```
 
 ### As a Library

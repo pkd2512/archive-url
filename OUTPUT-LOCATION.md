@@ -4,13 +4,13 @@
 
 ### Default Behavior
 
-When you run the CSV processing script:
+When you run the archive command:
 
 ```bash
-npx ts-node examples/process-csv.ts data.csv
+npm run archive data.csv
 ```
 
-**Output saved to:** `data-archived.csv` (same directory as input file)
+**Output saved to:** `data_archived.csv` (same directory as input file)
 
 ### How It Works
 
@@ -18,8 +18,8 @@ The script automatically creates the output filename:
 
 ```
 Input:  data.csv
-Output: data-archived.csv
-        ^^^^^^^^^^^^^ (adds "-archived" before .csv)
+Output: data_archived.csv
+        ^^^^^^^^^^^^^ (adds "_archived" before .csv)
 ```
 
 ### Custom Output Location

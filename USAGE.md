@@ -14,41 +14,29 @@ npm install
 npm run build
 ```
 
-### 3. Run the Demo
-
-Test with a single URL from data.csv:
+### 3. Archive a Single URL
 
 ```bash
-npm run demo
+npm run archive https://example.com
 ```
 
-Or using the full command:
+This will output the archived URL to the console.
+
+### 4. Process a CSV File
 
 ```bash
-npx ts-node test-demo.ts
+npm run archive data.csv
 ```
 
-### 4. Process the Full CSV
+This will create `data_archived.csv` with an additional `archive_url` column.
 
-Process all URLs in data.csv:
+**Note:** The output filename is automatically generated as `<filename>_archived.csv`
 
-```bash
-npm run csv data.csv
-```
+Examples:
 
-Or use the alias:
-
-```bash
-npm run process data.csv
-```
-
-Or using the full command:
-
-```bash
-npx ts-node examples/process-csv.ts data.csv
-```
-
-This will create `data-archived.csv` with an additional `archive_url` column.
+- `data.csv` → `data_archived.csv`
+- `urls.csv` → `urls_archived.csv`
+- `list.csv` → `list_archived.csv`
 
 ## Using as a Library
 

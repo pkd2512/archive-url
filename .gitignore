@@ -37,4 +37,4 @@ temp/
 *.tmp
 
 # Output CSVs (from examples)
-*-archived.csv
+*_archived.csv
