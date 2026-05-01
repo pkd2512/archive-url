@@ -19,6 +19,27 @@ npm install archive-url
 
 ## Quick Start
 
+### For Development (This Project)
+
+```bash
+# Install dependencies
+npm install
+
+# Build the library
+npm run build
+
+# Test with a single URL from your data.csv
+npm run demo
+
+# Process your entire CSV file
+npm run csv data.csv
+
+# Or use the alias
+npm run process data.csv
+```
+
+### As a Library
+
 ```typescript
 import { archiveUrl } from 'archive-url';
 
