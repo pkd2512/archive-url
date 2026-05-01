@@ -19,9 +19,12 @@ describe('archive-url library', () => {
   describe('URL normalization', () => {
     it('should normalize URLs correctly', () => {
       expect(normalizeUrl('https://example.com#fragment')).toBe(
-        'https://example.com/'
+        'https://example.com'
       );
-      expect(normalizeUrl('https://example.com/')).toBe('https://example.com/');
+      expect(normalizeUrl('https://example.com/')).toBe('https://example.com');
+      expect(normalizeUrl('https://example.com/path#fragment')).toBe(
+        'https://example.com/path'
+      );
     });
   });
 
