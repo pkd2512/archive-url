@@ -17,7 +17,11 @@
     "build": "tsc",
     "test": "jest",
     "prepublishOnly": "npm run build && npm test",
-    "demo": "ts-node test-demo.ts"
+    "demo": "ts-node test-demo.ts",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major",
+    "release": "npm run build && npm test && git push && git push --tags"
   },
   "keywords": [
     "archive",
