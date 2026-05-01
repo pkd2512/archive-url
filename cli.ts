@@ -53,11 +53,23 @@ function rowsToCSV(rows: Record<string, string>[]): string {
   return [headerLine, ...dataLines].join('\n');
 }
 
-async function archiveSingleUrl(url: string) {
+async function archiveSingleUrl(
+  url: string,
+  options: { forceNew: boolean; timeout: number; retries: number }
+) {
   console.log('🔍 Archiving URL:', url);
   console.log('');
 
-  const result = await archiveUrl(url);
+  if (options.forceNew) {
+    console.log('⚠️  Force new snapshot: enabled');
+    console.log('');
+  }
+
+  const result = await archiveUrl(url, {
+    forceNew: options.forceNew,
+    timeout: options.timeout,
+    retries: options.retries,
+  });
 
   if (result.success) {
     console.log('✅ Success!');
@@ -80,7 +92,15 @@ async function archiveSingleUrl(url: string) {
   }
 }
 
-async function archiveCsvFile(inputPath: string) {
+async function archiveCsvFile(
+  inputPath: string,
+  options: {
+    forceNew: boolean;
+    timeout: number;
+    retries: number;
+    output: string | null;
+  }
+) {
   // Check if file exists
   if (!fs.existsSync(inputPath)) {
     console.error(`❌ Error: File not found: ${inputPath}`);
@@ -89,12 +109,25 @@ async function archiveCsvFile(inputPath: string) {
 
   // Generate output filename
   const parsedPath = path.parse(inputPath);
-  const outputPath = path.join(
-    parsedPath.dir,
-    `${parsedPath.name}_archived${parsedPath.ext}`
-  );
+  const outputPath =
+    options.output ||
+    path.join(parsedPath.dir, `${parsedPath.name}_archived${parsedPath.ext}`);
 
   console.log('📄 Processing CSV file:', inputPath);
+  console.log('');
+
+  if (options.forceNew) {
+    console.log('⚠️  Force new snapshot: enabled');
+  }
+  if (options.timeout !== 30000) {
+    console.log(`⏱️  Timeout: ${options.timeout}ms`);
+  }
+  if (options.retries !== 3) {
+    console.log(`🔄 Retries: ${options.retries}`);
+  }
+  if (options.output) {
+    console.log(`📁 Custom output: ${options.output}`);
+  }
   console.log('');
 
   // Read and parse CSV
@@ -133,17 +166,25 @@ async function archiveCsvFile(inputPath: string) {
   console.log('');
 
   // Archive URLs
-  const results = await archiveUrls(urls, {}, (completed, total, result) => {
-    const status = result.success ? '✅' : '❌';
-    const type = result.isNewSnapshot ? '(new)' : '(existing)';
-    console.log(`[${completed}/${total}] ${status} ${result.originalUrl}`);
-    if (result.success) {
-      console.log(`         → ${result.archiveUrl} ${type}`);
-    } else {
-      console.log(`         → Error: ${result.error}`);
+  const results = await archiveUrls(
+    urls,
+    {
+      forceNew: options.forceNew,
+      timeout: options.timeout,
+      retries: options.retries,
+    },
+    (completed, total, result) => {
+      const status = result.success ? '✅' : '❌';
+      const type = result.isNewSnapshot ? '(new)' : '(existing)';
+      console.log(`[${completed}/${total}] ${status} ${result.originalUrl}`);
+      if (result.success) {
+        console.log(`         → ${result.archiveUrl} ${type}`);
+      } else {
+        console.log(`         → Error: ${result.error}`);
+      }
+      console.log('');
     }
-    console.log('');
-  });
+  );
 
   // Add archive_url column to rows
   rows.forEach((row, index) => {
@@ -169,31 +210,108 @@ async function archiveCsvFile(inputPath: string) {
   console.log('═'.repeat(60));
 }
 
+// Parse command-line arguments
+function parseArgs(args: string[]): {
+  input: string | null;
+  options: {
+    forceNew: boolean;
+    timeout: number;
+    retries: number;
+    output: string | null;
+    help: boolean;
+  };
+} {
+  const options = {
+    forceNew: false,
+    timeout: 30000,
+    retries: 3,
+    output: null as string | null,
+    help: false,
+  };
+
+  let input: string | null = null;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === '--help' || arg === '-h') {
+      options.help = true;
+    } else if (arg === '--force-new' || arg === '-f') {
+      options.forceNew = true;
+    } else if (arg === '--timeout' || arg === '-t') {
+      options.timeout = parseInt(args[++i], 10);
+    } else if (arg === '--retries' || arg === '-r') {
+      options.retries = parseInt(args[++i], 10);
+    } else if (arg === '--output' || arg === '-o') {
+      options.output = args[++i];
+    } else if (!arg.startsWith('-')) {
+      input = arg;
+    }
+  }
+
+  return { input, options };
+}
+
+function showHelp() {
+  console.log('Archive URL - CLI Tool');
+  console.log('');
+  console.log('Usage:');
+  console.log('  npm run archive <url> [options]        Archive a single URL');
+  console.log('  npm run archive <file.csv> [options]   Process CSV file');
+  console.log('');
+  console.log('Options:');
+  console.log(
+    "  -f, --force-new          Force new snapshot (don't use existing)"
+  );
+  console.log(
+    '  -t, --timeout <ms>       Request timeout in milliseconds (default: 30000)'
+  );
+  console.log(
+    '  -r, --retries <n>        Number of retry attempts (default: 3)'
+  );
+  console.log(
+    '  -o, --output <path>      Custom output path for CSV (default: auto)'
+  );
+  console.log('  -h, --help               Show this help message');
+  console.log('');
+  console.log('Examples:');
+  console.log('  npm run archive https://example.com');
+  console.log('  npm run archive https://example.com --force-new');
+  console.log('  npm run archive data.csv');
+  console.log('  npm run archive data.csv --force-new --timeout 60000');
+  console.log('  npm run archive data.csv -o results.csv');
+  console.log('  npm run archive data.csv -f -t 60000 -r 5 -o output.csv');
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.log('Archive URL - CLI Tool');
-    console.log('');
-    console.log('Usage:');
-    console.log('  npm run archive <url>        Archive a single URL');
-    console.log('  npm run archive <file.csv>   Process CSV file');
-    console.log('');
-    console.log('Examples:');
-    console.log('  npm run archive https://example.com');
-    console.log('  npm run archive data.csv');
+    showHelp();
     process.exit(0);
   }
 
-  const input = args[0];
+  const { input, options } = parseArgs(args);
+
+  if (options.help) {
+    showHelp();
+    process.exit(0);
+  }
+
+  if (!input) {
+    console.error('❌ Error: No URL or CSV file provided');
+    console.error('');
+    console.error('Run with --help for usage information');
+    process.exit(1);
+  }
 
   // Check if input is a URL or file
   if (isValidUrl(input)) {
     // Archive single URL
-    await archiveSingleUrl(input);
+    await archiveSingleUrl(input, options);
   } else if (input.endsWith('.csv')) {
     // Process CSV file
-    await archiveCsvFile(input);
+    await archiveCsvFile(input, options);
   } else {
     console.error('❌ Error: Input must be a valid URL or CSV file');
     console.error('');
