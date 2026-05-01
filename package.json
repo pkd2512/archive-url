@@ -1,24 +1,46 @@
 {
   "name": "archive-url",
   "version": "1.0.0",
-  "description": "Archive URLs using web archive services",
+  "description": "Archive URLs using the Internet Archive's Wayback Machine - CLI tool and Node.js library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "archive-url": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "archive": "ts-node cli.ts",
     "build": "tsc",
     "test": "jest",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run build && npm test",
     "demo": "ts-node test-demo.ts"
   },
   "keywords": [
     "archive",
     "wayback",
+    "wayback-machine",
     "url",
     "web-archive",
-    "internet-archive"
+    "internet-archive",
+    "url-archiver",
+    "archive-url",
+    "csv",
+    "cli",
+    "typescript"
   ],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pkd2512/archive-url.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pkd2512/archive-url/issues"
+  },
+  "homepage": "https://github.com/pkd2512/archive-url#readme",
+  "author": "Prasanta Kumar Dutta <pkd@prasantakrdutta.com>",
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.11",

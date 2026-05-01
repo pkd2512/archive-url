@@ -38,16 +38,6 @@ npm install -g archive-url
 npm install archive-url
 ```
 
-### Local Development
-
-```bash
-# Clone and install
-git clone <repository-url>
-cd archive-url
-npm install
-npm run build
-```
-
 ---
 
 ## CLI Usage
