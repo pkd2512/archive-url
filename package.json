@@ -8,7 +8,8 @@
     "build": "tsc",
     "test": "jest",
     "prepublishOnly": "npm run build",
-    "archive": "ts-node cli.ts"
+    "archive": "ts-node cli.ts",
+    "demo": "ts-node test-demo.ts"
   },
   "keywords": [
     "archive",
