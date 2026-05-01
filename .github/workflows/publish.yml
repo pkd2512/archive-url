@@ -1,0 +1,58 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Publish to npm with provenance
+        run: npm publish --provenance --access public
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Changes in v${{ steps.version.outputs.VERSION }}
+
+            See the [CHANGELOG](https://github.com/${{ github.repository }}/compare/v${{ steps.version.outputs.VERSION }}...HEAD) for details.
+
+            ### Installation
+            ```bash
+            npm install archive-url@${{ steps.version.outputs.VERSION }}
+            ```
+          draft: false
+          prerelease: false
