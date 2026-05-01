@@ -14,6 +14,17 @@ import fs from 'fs';
 import { isValidUrl } from './src/utils';
 import path from 'path';
 
+// Parse comma-separated URLs from text file
+function parseTextFileUrls(content: string): string[] {
+  // Split by commas and/or newlines
+  const urls = content
+    .split(/[,\n]/)
+    .map((url) => url.trim())
+    .filter((url) => url && isValidUrl(url));
+
+  return urls;
+}
+
 // Simple CSV parser
 function parseCSV(content: string): Record<string, string>[] {
   const lines = content.split('\n').filter((line) => line.trim());
@@ -90,6 +101,107 @@ async function archiveSingleUrl(
     console.log('Error:', result.error);
     process.exit(1);
   }
+}
+
+async function archiveTextFile(
+  inputPath: string,
+  options: {
+    forceNew: boolean;
+    timeout: number;
+    retries: number;
+    output: string | null;
+  }
+) {
+  // Check if file exists
+  if (!fs.existsSync(inputPath)) {
+    console.error(`❌ Error: File not found: ${inputPath}`);
+    process.exit(1);
+  }
+
+  // Generate output filename (change .txt to .csv)
+  const parsedPath = path.parse(inputPath);
+  const defaultOutput = path.join(
+    parsedPath.dir,
+    `${parsedPath.name}_archived.csv`
+  );
+  const outputPath = options.output || defaultOutput;
+
+  console.log('📄 Processing text file:', inputPath);
+  console.log('');
+
+  if (options.forceNew) {
+    console.log('⚠️  Force new snapshot: enabled');
+  }
+  if (options.timeout !== 30000) {
+    console.log(`⏱️  Timeout: ${options.timeout}ms`);
+  }
+  if (options.retries !== 3) {
+    console.log(`🔄 Retries: ${options.retries}`);
+  }
+  if (options.output) {
+    console.log(`📁 Custom output: ${options.output}`);
+  }
+  console.log('');
+
+  // Read and parse text file
+  const textContent = fs.readFileSync(inputPath, 'utf-8');
+  const urls = parseTextFileUrls(textContent);
+
+  if (urls.length === 0) {
+    console.error('❌ Error: No valid URLs found in text file');
+    console.error('');
+    console.error('Expected format: comma-separated or newline-separated URLs');
+    console.error('Example: https://example.com, https://github.com');
+    process.exit(1);
+  }
+
+  console.log(`Found ${urls.length} valid URLs to archive`);
+  console.log('');
+  console.log('⏳ Starting archival process...');
+  console.log('Note: Rate limited to ~15 URLs/minute (4 seconds per URL)');
+  console.log('');
+
+  // Archive URLs
+  const results = await archiveUrls(
+    urls,
+    {
+      forceNew: options.forceNew,
+      timeout: options.timeout,
+      retries: options.retries,
+    },
+    (completed, total, result) => {
+      const status = result.success ? '✅' : '❌';
+      const type = result.isNewSnapshot ? '(new)' : '(existing)';
+      console.log(`[${completed}/${total}] ${status} ${result.originalUrl}`);
+      if (result.success) {
+        console.log(`         → ${result.archiveUrl} ${type}`);
+      } else {
+        console.log(`         → Error: ${result.error}`);
+      }
+      console.log('');
+    }
+  );
+
+  // Create CSV rows
+  const rows = results.map((result) => ({
+    url: result.originalUrl,
+    archive_url: result.success ? result.archiveUrl : `ERROR: ${result.error}`,
+  }));
+
+  // Write output CSV
+  const outputCSV = rowsToCSV(rows);
+  fs.writeFileSync(outputPath, outputCSV, 'utf-8');
+
+  console.log('');
+  console.log('═'.repeat(60));
+  console.log('📊 Summary');
+  console.log('═'.repeat(60));
+  console.log(`Total URLs processed: ${results.length}`);
+  console.log(`✅ Successful: ${results.filter((r) => r.success).length}`);
+  console.log(`❌ Failed: ${results.filter((r) => !r.success).length}`);
+  console.log('');
+  console.log(`💾 Output saved to: ${outputPath}`);
+  console.log('═'.repeat(60));
 }
 
 async function archiveCsvFile(
@@ -258,6 +370,9 @@ function showHelp() {
   console.log('Usage:');
   console.log('  npm run archive <url> [options]        Archive a single URL');
   console.log('  npm run archive <file.csv> [options]   Process CSV file');
+  console.log(
+    '  npm run archive <file.txt> [options]   Process text file with URLs'
+  );
   console.log('');
   console.log('Options:');
   console.log(
@@ -278,9 +393,15 @@ function showHelp() {
   console.log('  npm run archive https://example.com');
   console.log('  npm run archive https://example.com --force-new');
   console.log('  npm run archive data.csv');
+  console.log('  npm run archive urls.txt');
   console.log('  npm run archive data.csv --force-new --timeout 60000');
-  console.log('  npm run archive data.csv -o results.csv');
+  console.log('  npm run archive urls.txt -o results.csv');
   console.log('  npm run archive data.csv -f -t 60000 -r 5 -o output.csv');
+  console.log('');
+  console.log('Text file format:');
+  console.log('  - One URL per line, or');
+  console.log('  - Comma-separated URLs');
+  console.log('  - Output will be a CSV with url and archive_url columns');
 }
 
 async function main() {
@@ -312,12 +433,16 @@ async function main() {
   } else if (input.endsWith('.csv')) {
     // Process CSV file
     await archiveCsvFile(input, options);
+  } else if (input.endsWith('.txt')) {
+    // Process text file
+    await archiveTextFile(input, options);
   } else {
-    console.error('❌ Error: Input must be a valid URL or CSV file');
+    console.error('❌ Error: Input must be a valid URL, CSV, or TXT file');
     console.error('');
     console.error('Examples:');
     console.error('  npm run archive https://example.com');
     console.error('  npm run archive data.csv');
+    console.error('  npm run archive urls.txt');
     process.exit(1);
   }
 }
