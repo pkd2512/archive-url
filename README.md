@@ -17,6 +17,8 @@ A TypeScript/JavaScript library for archiving URLs using the Internet Archive's 
 npm install archive-url
 ```
 
+For detailed usage in your Node.js projects, see [LIBRARY-USAGE.md](./LIBRARY-USAGE.md).
+
 ## Quick Start
 
 ### For Development (This Project)
