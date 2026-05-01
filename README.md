@@ -1,5 +1,10 @@
 # archive-url
 
+[![npm version](https://img.shields.io/npm/v/archive-url.svg)](https://www.npmjs.com/package/archive-url)
+[![npm downloads](https://img.shields.io/npm/dm/archive-url.svg)](https://www.npmjs.com/package/archive-url)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/pkd2512/archive-url/actions/workflows/ci.yml/badge.svg)](https://github.com/pkd2512/archive-url/actions/workflows/ci.yml)
+
 A TypeScript/JavaScript library and CLI tool for archiving URLs using the Internet Archive's Wayback Machine.
 
 ## Features
