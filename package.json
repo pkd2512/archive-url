@@ -1,6 +1,6 @@
 {
   "name": "archive-url",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Archive URLs using the Internet Archive's Wayback Machine - CLI tool and Node.js library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
