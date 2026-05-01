@@ -1,146 +1,232 @@
 # archive-url
 
-A TypeScript/JavaScript library for archiving URLs using the Internet Archive's Wayback Machine.
+A TypeScript/JavaScript library and CLI tool for archiving URLs using the Internet Archive's Wayback Machine.
 
 ## Features
 
 - 📦 Archive URLs using the Wayback Machine
-- 🔍 Check if URLs are already archived
-- ⚡ Batch processing with automatic rate limiting
-- 🔄 Automatic retry logic for failed requests
-- 📝 TypeScript support with full type definitions
+- 💻 Use as a CLI tool or Node.js library
+- 📄 Process CSV and TXT files with URLs
+- 🔄 Automatic retry logic and rate limiting
+- ⚡ Batch processing with progress tracking
+- 📝 Full TypeScript support
 - 🚀 Simple and intuitive API
 
+## Table of Contents
+
+- [Installation](#installation)
+- [CLI Usage](#cli-usage)
+- [Library Usage](#library-usage)
+- [API Reference](#api-reference)
+- [Examples](#examples)
+- [How Archiving Works](#how-archiving-works)
+- [Advanced Topics](#advanced-topics)
+
+---
+
 ## Installation
+
+### As a Global CLI Tool
+
+```bash
+npm install -g archive-url
+```
+
+### In Your Project
 
 ```bash
 npm install archive-url
 ```
 
-For detailed usage in your Node.js projects, see [LIBRARY-USAGE.md](./LIBRARY-USAGE.md).
-
-## Quick Start
-
-### For Development (This Project)
+### Local Development
 
 ```bash
-# Install dependencies
+# Clone and install
+git clone <repository-url>
+cd archive-url
 npm install
-
-# Build the library
 npm run build
+```
 
-# Archive a single URL
+---
+
+## CLI Usage
+
+### Archive a Single URL
+
+```bash
 npm run archive https://example.com
+```
 
-# Process a CSV file (creates filename_archived.csv)
+Output:
+
+```
+🔍 Archiving URL: https://example.com
+
+✅ Success!
+
+📦 Archive URL:
+https://web.archive.org/web/20260501135114/https://example.com
+
+ℹ️  Details:
+  • Original URL: https://example.com
+  • Timestamp: 20260501135114
+  • New snapshot: Yes
+```
+
+### Process CSV Files
+
+```bash
 npm run archive data.csv
 ```
 
-### As a Library
+**Expected CSV format:** Any CSV with a column named `url`, `link`, `uri`, `href`, or `website`
 
-```typescript
-import { archiveUrl } from 'archive-url';
+**Output:** Creates `data_archived.csv` with an additional `archive_url` column
 
-// Archive a single URL
-const result = await archiveUrl('https://example.com');
+Example:
 
-if (result.success) {
-  console.log('Archive URL:', result.archiveUrl);
-  console.log('Is new snapshot:', result.isNewSnapshot);
-} else {
-  console.error('Error:', result.error);
-}
+```csv
+# Input: data.csv
+date,topic,link
+2024-01-01,Example,https://example.com
+
+# Output: data_archived.csv
+date,topic,link,archive_url
+2024-01-01,Example,https://example.com,https://web.archive.org/web/...
 ```
 
-## API Reference
+### Process Text Files
 
-### `archiveUrl(url, options?)`
-
-Archive a single URL.
-
-**Parameters:**
-
-- `url` (string): The URL to archive
-- `options` (ArchiveOptions, optional):
-  - `forceNew` (boolean): Force creating a new snapshot even if one exists (default: `false`)
-  - `timeout` (number): Request timeout in milliseconds (default: `30000`)
-  - `retries` (number): Number of retry attempts on failure (default: `3`)
-  - `retryDelay` (number): Delay between retries in milliseconds (default: `1000`)
-  - `userAgent` (string): Custom user agent string
-
-**Returns:** `Promise<ArchiveResult>`
-
-```typescript
-interface ArchiveResult {
-  originalUrl: string;      // Original URL
-  archiveUrl: string;       // Wayback Machine URL
-  timestamp?: string;       // Archive timestamp
-  isNewSnapshot: boolean;   // Whether a new snapshot was created
-  success: boolean;         // Success status
-  error?: string;           // Error message if failed
-}
+```bash
+npm run archive urls.txt
 ```
 
-**Example:**
+**Text file format:** One URL per line, or comma-separated:
 
-```typescript
-import { archiveUrl } from 'archive-url';
+```text
+https://example.com
+https://github.com
+https://stackoverflow.com
+```
 
-// Basic usage
-const result = await archiveUrl('https://example.com');
+Or:
 
-// With options
+```text
+https://example.com, https://github.com, https://stackoverflow.com
+```
+
+**Output:** Creates `urls_archived.csv` with `url` and `archive_url` columns
+
+### CLI Options
+
+```bash
+# Force new snapshot (don't reuse existing archives)
+npm run archive data.csv --force-new
+
+# Custom timeout (milliseconds)
+npm run archive data.csv --timeout 60000
+
+# Custom retry attempts
+npm run archive data.csv --retries 5
+
+# Custom output file
+npm run archive data.csv --output results.csv
+
+# Combine options
+npm run archive data.csv -f -t 60000 -r 5 -o output.csv
+```
+
+**Available options:**
+
+- `-f, --force-new` - Force new snapshot
+- `-t, --timeout <ms>` - Request timeout (default: 30000)
+- `-r, --retries <n>` - Retry attempts (default: 3)
+- `-o, --output <path>` - Custom output path
+- `-h, --help` - Show help
+
+### Get Help
+
+```bash
+npm run archive --help
+```
+
+---
+
+## Library Usage
+
+### Basic Import
+
+```javascript
+// CommonJS
+const { archiveUrl, archiveUrls } = require('archive-url');
+
+// ES Modules
+import { archiveUrl, archiveUrls } from 'archive-url';
+
+// TypeScript
+import { archiveUrl, archiveUrls, ArchiveResult } from 'archive-url';
+```
+
+### Archive a Single URL
+
+```javascript
+const { archiveUrl } = require('archive-url');
+
+async function main() {
+  const result = await archiveUrl('https://example.com');
+  
+  if (result.success) {
+    console.log('Archive URL:', result.archiveUrl);
+    console.log('Is new snapshot:', result.isNewSnapshot);
+    console.log('Timestamp:', result.timestamp);
+  } else {
+    console.error('Error:', result.error);
+  }
+}
+
+main();
+```
+
+### Archive Multiple URLs
+
+```javascript
+const { archiveUrls } = require('archive-url');
+
+async function main() {
+  const urls = [
+    'https://example.com',
+    'https://github.com',
+    'https://stackoverflow.com'
+  ];
+  
+  const results = await archiveUrls(urls, {}, (completed, total, result) => {
+    console.log(`[${completed}/${total}] ${result.originalUrl}`);
+    console.log(`Archive: ${result.archiveUrl}`);
+  });
+  
+  // Summary
+  const successful = results.filter(r => r.success).length;
+  console.log(`Successful: ${successful}/${results.length}`);
+}
+
+main();
+```
+
+### With Options
+
+```javascript
 const result = await archiveUrl('https://example.com', {
-  forceNew: true,
-  timeout: 60000,
-  retries: 5
+  forceNew: true,    // Force new snapshot
+  timeout: 60000,    // 60 second timeout
+  retries: 5         // Retry 5 times on failure
 });
 ```
 
-### `archiveUrls(urls, options?, onProgress?)`
+### Check if Already Archived
 
-Archive multiple URLs with automatic rate limiting.
-
-**Parameters:**
-
-- `urls` (string[]): Array of URLs to archive
-- `options` (ArchiveOptions, optional): Same as `archiveUrl`
-- `onProgress` (function, optional): Progress callback `(completed, total, result) => void`
-
-**Returns:** `Promise<ArchiveResult[]>`
-
-**Example:**
-
-```typescript
-import { archiveUrls } from 'archive-url';
-
-const urls = [
-  'https://example.com',
-  'https://github.com',
-  'https://stackoverflow.com'
-];
-
-const results = await archiveUrls(urls, {}, (completed, total, result) => {
-  console.log(`Progress: ${completed}/${total}`);
-  console.log(`Latest: ${result.archiveUrl}`);
-});
-```
-
-### `checkArchived(url)`
-
-Check if a URL has an existing archive.
-
-**Parameters:**
-
-- `url` (string): The URL to check
-
-**Returns:** `Promise<ArchiveResult | null>`
-
-**Example:**
-
-```typescript
-import { checkArchived } from 'archive-url';
+```javascript
+const { checkArchived } = require('archive-url');
 
 const existing = await checkArchived('https://example.com');
 
@@ -151,145 +237,533 @@ if (existing) {
 }
 ```
 
-### `getLatestArchive(url)`
+---
 
-Get the most recent archive URL for a given URL.
+## API Reference
+
+### `archiveUrl(url, options?)`
+
+Archive a single URL.
 
 **Parameters:**
 
-- `url` (string): The URL to look up
+- `url` (string): URL to archive
+- `options` (object, optional):
+  - `forceNew` (boolean): Force new snapshot (default: false)
+  - `timeout` (number): Timeout in milliseconds (default: 30000)
+  - `retries` (number): Retry attempts (default: 3)
+  - `retryDelay` (number): Delay between retries in ms (default: 1000)
 
-**Returns:** `Promise<string | null>`
-
-**Example:**
-
-```typescript
-import { getLatestArchive } from 'archive-url';
-
-const archiveUrl = await getLatestArchive('https://example.com');
-console.log('Latest archive:', archiveUrl);
-```
-
-## CSV Processing Example
-
-Process a CSV file with URLs and add archive URLs:
+**Returns:** `Promise<ArchiveResult>`
 
 ```typescript
-import { archiveUrls } from 'archive-url';
-import fs from 'fs';
-
-// Read CSV (simplified example)
-const csvContent = fs.readFileSync('urls.csv', 'utf-8');
-const lines = csvContent.split('\n');
-const urls = lines.slice(1).map(line => {
-  const columns = line.split(',');
-  return columns[3]; // Assuming URL is in 4th column
-}).filter(url => url && url.trim());
-
-// Archive URLs
-const results = await archiveUrls(urls, {}, (completed, total, result) => {
-  console.log(`Processed ${completed}/${total}: ${result.originalUrl}`);
-});
-
-// Generate new CSV with archive URLs
-const header = lines[0] + ',archive_url\n';
-const rows = lines.slice(1).map((line, index) => {
-  const result = results[index];
-  const archiveUrl = result.success ? result.archiveUrl : 'ERROR: ' + result.error;
-  return `${line},"${archiveUrl}"`;
-}).join('\n');
-
-fs.writeFileSync('urls_archived.csv', header + rows);
-console.log('CSV with archive URLs saved!');
-```
-
-## Rate Limiting
-
-The library automatically implements rate limiting when using `archiveUrls()`:
-
-- 4 second delay between requests
-- Respects Wayback Machine's informal limits (~15 requests/minute)
-- Configurable retry logic for failed requests
-
-## Error Handling
-
-All functions return results with a `success` boolean flag. Always check this before using the archive URL:
-
-```typescript
-const result = await archiveUrl('https://example.com');
-
-if (result.success) {
-  // Use result.archiveUrl
-} else {
-  // Handle error: result.error
+interface ArchiveResult {
+  originalUrl: string;      // Original URL
+  archiveUrl: string;       // Wayback Machine URL
+  timestamp?: string;       // Archive timestamp (e.g., "20240101120000")
+  isNewSnapshot: boolean;   // Whether a new snapshot was created
+  success: boolean;         // Success status
+  error?: string;           // Error message if failed
 }
 ```
 
-## TypeScript Support
+### `archiveUrls(urls, options?, onProgress?)`
 
-The library is written in TypeScript and includes full type definitions:
+Archive multiple URLs with automatic rate limiting.
 
-```typescript
-import type { ArchiveOptions, ArchiveResult } from 'archive-url';
+**Parameters:**
 
-const options: ArchiveOptions = {
-  forceNew: true,
-  timeout: 60000
-};
+- `urls` (string[]): Array of URLs
+- `options` (object, optional): Same as `archiveUrl`
+- `onProgress` (function, optional): `(completed, total, result) => void`
 
-const result: ArchiveResult = await archiveUrl('https://example.com', options);
-```
+**Returns:** `Promise<ArchiveResult[]>`
 
-## Utility Functions
+**Note:** Automatically applies 4-second delay between requests (rate limiting)
 
-### `isValidUrl(url: string): boolean`
+### `checkArchived(url)`
 
-Validate if a string is a valid HTTP/HTTPS URL.
+Check if URL has existing archive.
 
-### `normalizeUrl(url: string): string`
+**Parameters:**
 
-Normalize a URL by removing fragments and trailing slashes.
+- `url` (string): URL to check
 
-### `formatTimestamp(timestamp: string): string`
+**Returns:** `Promise<ArchiveResult | null>`
 
-Format a Wayback Machine timestamp to human-readable date.
+### `getLatestArchive(url)`
+
+Get most recent archive URL.
+
+**Parameters:**
+
+- `url` (string): URL to look up
+
+**Returns:** `Promise<string | null>`
+
+---
 
 ## Examples
 
-### Archive a URL and force a new snapshot
+### Example 1: Simple Archiving
 
-```typescript
+```javascript
+const { archiveUrl } = require('archive-url');
+
+const result = await archiveUrl('https://example.com');
+console.log(result.archiveUrl);
+// Output: https://web.archive.org/web/20260501135114/https://example.com
+```
+
+### Example 2: Force New Snapshot
+
+```javascript
 const result = await archiveUrl('https://example.com', { forceNew: true });
 console.log('New archive created:', result.archiveUrl);
 ```
 
-### Check if already archived before creating new snapshot
+### Example 3: Process CSV Data
 
-```typescript
-const existing = await checkArchived('https://example.com');
+```javascript
+const { archiveUrls } = require('archive-url');
+const fs = require('fs');
 
-if (existing) {
-  console.log('Using existing archive:', existing.archiveUrl);
-} else {
-  const result = await archiveUrl('https://example.com');
-  console.log('Created new archive:', result.archiveUrl);
-}
+// Read CSV
+const csvContent = fs.readFileSync('urls.csv', 'utf-8');
+const lines = csvContent.split('\n');
+const urls = lines.slice(1).map(line => line.split(',')[0]);
+
+// Archive URLs
+const results = await archiveUrls(urls);
+
+// Create output CSV
+const output = lines.map((line, i) => {
+  if (i === 0) return line + ',archive_url';
+  const archiveUrl = results[i-1]?.archiveUrl || 'ERROR';
+  return `${line},"${archiveUrl}"`;
+}).join('\n');
+
+fs.writeFileSync('output.csv', output);
 ```
 
-### Process multiple URLs with progress tracking
+### Example 4: Smart Archiving (Check First)
 
-```typescript
+```javascript
+const { checkArchived, archiveUrl } = require('archive-url');
+
+async function smartArchive(url) {
+  // Check if already archived
+  const existing = await checkArchived(url);
+  
+  if (existing) {
+    console.log('Using existing archive:', existing.archiveUrl);
+    return existing;
+  }
+  
+  // Create new archive
+  const result = await archiveUrl(url);
+  console.log('Created new archive:', result.archiveUrl);
+  return result;
+}
+
+await smartArchive('https://example.com');
+```
+
+### Example 5: Batch Processing with Progress
+
+```javascript
+const { archiveUrls } = require('archive-url');
+
 const urls = ['https://example.com', 'https://github.com'];
 
-await archiveUrls(urls, {}, (completed, total, result) => {
-  console.log(`[${completed}/${total}] ${result.originalUrl}`);
+const results = await archiveUrls(urls, {}, (completed, total, result) => {
+  console.log(`\n[${completed}/${total}] Processing: ${result.originalUrl}`);
+  
   if (result.success) {
-    console.log(`  ✓ Archived: ${result.archiveUrl}`);
+    console.log(`✅ Archived: ${result.archiveUrl}`);
+    console.log(`   New snapshot: ${result.isNewSnapshot ? 'Yes' : 'No'}`);
   } else {
-    console.log(`  ✗ Failed: ${result.error}`);
+    console.log(`❌ Failed: ${result.error}`);
   }
 });
 ```
+
+### Example 6: Express.js Integration
+
+```javascript
+const express = require('express');
+const { archiveUrl } = require('archive-url');
+
+const app = express();
+app.use(express.json());
+
+app.post('/api/archive', async (req, res) => {
+  const { url } = req.body;
+  
+  if (!url) {
+    return res.status(400).json({ error: 'URL required' });
+  }
+  
+  const result = await archiveUrl(url);
+  
+  if (result.success) {
+    res.json({
+      archiveUrl: result.archiveUrl,
+      timestamp: result.timestamp,
+      isNew: result.isNewSnapshot
+    });
+  } else {
+    res.status(500).json({ error: result.error });
+  }
+});
+
+app.listen(3000);
+```
+
+### Example 7: Error Handling
+
+```javascript
+const { archiveUrl } = require('archive-url');
+
+async function safeArchive(url) {
+  try {
+    const result = await archiveUrl(url, {
+      timeout: 30000,
+      retries: 3
+    });
+    
+    if (result.success) {
+      return { success: true, url: result.archiveUrl };
+    } else {
+      return { success: false, error: result.error };
+    }
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+const result = await safeArchive('https://example.com');
+console.log(result);
+```
+
+---
+
+## How Archiving Works
+
+### Understanding the Wayback Machine
+
+The Internet Archive's Wayback Machine saves snapshots of web pages over time. This library interacts with their Save API.
+
+### Two Archiving Modes
+
+**1. Reuse Existing Archives (Default)**
+
+```javascript
+const result = await archiveUrl('https://example.com');
+// May return existing archive if available
+```
+
+- Checks if URL is already archived
+- Returns existing archive if found (faster)
+- Creates new snapshot only if needed
+- `result.isNewSnapshot` will be `false`
+
+**2. Force New Snapshot**
+
+```javascript
+const result = await archiveUrl('https://example.com', { forceNew: true });
+// Always creates new snapshot
+```
+
+- Always requests new snapshot
+- Takes longer (4-10 seconds)
+- `result.isNewSnapshot` will be `true`
+- Use when you need current content
+
+### Archive URL Format
+
+Archive URLs follow this pattern:
+
+```
+https://web.archive.org/web/[TIMESTAMP]/[ORIGINAL_URL]
+
+Example:
+https://web.archive.org/web/20260501135114/https://example.com
+                              └─timestamp─┘
+```
+
+**Timestamp format:** `YYYYMMDDHHmmss`
+
+- `20260501135114` = May 1, 2026 at 13:51:14 UTC
+
+### Rate Limiting
+
+The library automatically handles rate limiting:
+
+- **Single URL:** No delay
+- **Multiple URLs:** 4-second delay between requests
+- **Recommended:** ~15 URLs per minute
+- **Built-in retries:** 3 attempts by default
+
+### Output File Locations
+
+**CSV files:**
+
+- Input: `data.csv`
+- Output: `data_archived.csv` (same directory)
+
+**Text files:**
+
+- Input: `urls.txt`
+- Output: `urls_archived.csv` (same directory)
+
+**Custom output:**
+
+```bash
+npm run archive data.csv --output /custom/path/result.csv
+```
+
+### Important Notes
+
+1. **URL Normalization:** URLs are normalized (fragments removed, trailing slashes handled)
+2. **Error Handling:** Failed URLs are marked with `ERROR:` in CSV output
+3. **Progress Tracking:** Use progress callbacks for long-running operations
+4. **Timeouts:** Default 30-second timeout per request
+5. **Success Rate:** Check `result.success` before using archive URLs
+
+---
+
+## Advanced Topics
+
+### TypeScript Usage
+
+Full TypeScript support with type definitions:
+
+```typescript
+import { 
+  archiveUrl, 
+  archiveUrls,
+  checkArchived,
+  ArchiveOptions,
+  ArchiveResult 
+} from 'archive-url';
+
+// Type-safe options
+const options: ArchiveOptions = {
+  forceNew: true,
+  timeout: 60000,
+  retries: 5
+};
+
+// Type-safe result
+const result: ArchiveResult = await archiveUrl('https://example.com', options);
+
+// Type-safe progress callback
+await archiveUrls(
+  urls,
+  options,
+  (completed: number, total: number, result: ArchiveResult) => {
+    console.log(`${completed}/${total}`);
+  }
+);
+```
+
+### Utility Functions
+
+```javascript
+import { isValidUrl, normalizeUrl, formatTimestamp } from 'archive-url';
+
+// Validate URL
+const valid = isValidUrl('https://example.com');  // true
+
+// Normalize URL
+const normalized = normalizeUrl('https://example.com/#section');
+// Returns: https://example.com
+
+// Format timestamp
+const date = formatTimestamp('20260501135114');
+// Returns: "2026-05-01 13:51:14"
+```
+
+### Custom Delays for Batch Processing
+
+```javascript
+const { archiveUrl } = require('archive-url');
+
+async function batchWithCustomDelay(urls, delayMs = 5000) {
+  const results = [];
+  
+  for (let i = 0; i < urls.length; i++) {
+    const result = await archiveUrl(urls[i]);
+    results.push(result);
+    
+    if (i < urls.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  return results;
+}
+```
+
+### Next.js Integration
+
+```typescript
+// pages/api/archive.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { archiveUrl, ArchiveResult } from 'archive-url';
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
+  const { url } = req.body;
+  const result: ArchiveResult = await archiveUrl(url);
+  
+  if (result.success) {
+    res.status(200).json({ archiveUrl: result.archiveUrl });
+  } else {
+    res.status(500).json({ error: result.error });
+  }
+}
+```
+
+---
+
+## Testing
+
+```bash
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+```
+
+---
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Build library
+npm run build
+
+# Run tests
+npm test
+
+# Test CLI
+npm run archive https://example.com
+npm run demo  # Quick test with sample data
+```
+
+---
+
+## Troubleshooting
+
+### Issue: Module not found
+
+Make sure the library is built:
+
+```bash
+npm run build
+```
+
+### Issue: Rate limiting errors
+
+Increase timeout and retries:
+
+```javascript
+await archiveUrl(url, {
+  timeout: 60000,
+  retries: 5
+});
+```
+
+### Issue: CSV not processed
+
+Ensure your CSV has a column named one of: `url`, `link`, `uri`, `href`, `website`
+
+### Issue: TypeScript errors
+
+Ensure proper TypeScript configuration:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  }
+}
+```
+
+---
+
+## Common Use Cases
+
+### 1. Backup Important Links
+
+```javascript
+const urls = [
+  'https://important-article.com',
+  'https://research-paper.com'
+];
+const results = await archiveUrls(urls);
+```
+
+### 2. Research Paper Citations
+
+```javascript
+async function archiveCitations(citations) {
+  const results = {};
+  for (const citation of citations) {
+    if (citation.url) {
+      const result = await archiveUrl(citation.url);
+      results[citation.id] = result.archiveUrl;
+    }
+  }
+  return results;
+}
+```
+
+### 3. News Article Preservation
+
+```javascript
+async function preserveArticles(articles) {
+  const urls = articles.map(a => a.url);
+  const results = await archiveUrls(urls);
+  
+  return articles.map((article, i) => ({
+    ...article,
+    archiveUrl: results[i].archiveUrl
+  }));
+}
+```
+
+---
+
+## Publishing to npm
+
+```bash
+# Update version
+npm version patch  # or minor, or major
+
+# Login to npm
+npm login
+
+# Publish
+npm publish
+```
+
+---
 
 ## License
 
@@ -297,8 +771,8 @@ MIT
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Please submit a Pull Request.
 
 ## Support
 
-For bugs and feature requests, please create an issue on GitHub.
+For bugs and feature requests, create an issue on GitHub.
