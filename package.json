@@ -5,10 +5,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "archive": "ts-node cli.ts",
     "build": "tsc",
     "test": "jest",
     "prepublishOnly": "npm run build",
-    "archive": "ts-node cli.ts",
     "demo": "ts-node test-demo.ts"
   },
   "keywords": [
